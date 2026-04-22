@@ -22,6 +22,7 @@
       padding: 28px 18px 56px;
       max-width: 480px;
       margin: 0 auto;
+      position: relative;
     }
     .screen.active { display: flex; }
 
@@ -477,45 +478,11 @@
       line-height: 2.2;
     }
 
-    /* ── ふわっとアニメーション ── */
-    .fade-wrapper {
-      position: fixed;
-      display: inline-block;
-      pointer-events: none;
-      z-index: 200;
-      opacity: 0;
-      animation: fadeInOut 3.8s ease forwards;
-    }
-    .fade-text {
-      display: block;
-      font-size: 0.78rem;
-      font-weight: 700;
-      color: #d63f6a;
-      line-height: 1.65;
-      word-break: break-word;
-    }
-    .fade-bubble {
-      position: absolute;
-      border-radius: 50%;
-      border: 1.5px solid rgba(255, 255, 255, 0.72);
-      animation: bubbleFloat var(--bur, 2s) ease-in-out infinite var(--bdelay, 0s);
-    }
-    @keyframes fadeInOut {
-      0%   { opacity: 0; transform: translateY(10px) scale(0.9);  }
-      18%  { opacity: 1; transform: translateY(0px)  scale(1);    }
-      72%  { opacity: 1; transform: translateY(-4px) scale(1);    }
-      100% { opacity: 0; transform: translateY(-14px) scale(0.95);}
-    }
-    @keyframes bubbleFloat {
-      0%, 100% { transform: translateY(0px);  }
-      50%      { transform: translateY(-9px); }
-    }
-
-    /* ── ホームボタン（固定・コーギー右上） ── */
+    /* ── ホームボタン（各画面の右上・絶対配置） ── */
     .home-btn {
-      position: fixed;
-      top: 78px;
-      left: calc(50% + 54px);
+      position: absolute;
+      top: 18px;
+      right: 12px;
       background: #fff;
       border: 1.5px solid #f0c4cb;
       border-radius: 999px;
@@ -524,14 +491,56 @@
       font-weight: 600;
       padding: 6px 14px;
       cursor: pointer;
-      z-index: 150;
-      display: none;
+      z-index: 10;
       letter-spacing: 0.06em;
       box-shadow: 0 2px 8px rgba(201,123,132,0.12);
       transition: background 0.15s;
     }
-    .home-btn:hover  { background: #fde8eb; }
-    .home-btn.visible { display: block; }
+    .home-btn:hover { background: #fde8eb; }
+
+    /* ── ハート吹き出し ── */
+    .heart-bubble-wrapper {
+      position: fixed; pointer-events: none; z-index: 250; opacity: 0;
+      animation: heartBubbleFade 10s ease forwards;
+    }
+    @keyframes heartBubbleFade {
+      0%   { opacity: 0; transform: scale(0.78) translateY(10px); }
+      7%   { opacity: 1; transform: scale(1.04) translateY(0); }
+      13%  {              transform: scale(1)    translateY(0); }
+      82%  { opacity: 1; transform: scale(1)    translateY(-2px); }
+      100% { opacity: 0; transform: scale(0.96) translateY(-10px); }
+    }
+    .bubble-heart-svg { display: block; filter: drop-shadow(0 4px 14px rgba(201,100,120,0.18)); }
+    .bubble-text {
+      position: absolute; font-size: 0.77rem; color: #7a3042;
+      line-height: 1.78; white-space: pre-line; text-align: center;
+    }
+
+    /* ── トップ画面：呪文カード周りのふわっとハート ── */
+    .top-float-heart {
+      position: fixed; pointer-events: none; z-index: 5; opacity: 0;
+      animation-name: topHeartFloat;
+      animation-timing-function: ease-in-out;
+      animation-iteration-count: infinite;
+    }
+    body:not(.on-top) .top-float-heart { display: none; }
+    @keyframes topHeartFloat {
+      0%   { opacity: 0;    transform: translateY(0)    translateX(0); }
+      12%  { opacity: 0.75; }
+      35%  { opacity: 0.7;  transform: translateY(-10px) translateX(var(--dx, 4px)); }
+      60%  { opacity: 0.6;  transform: translateY(-5px)  translateX(var(--dx, 4px)); }
+      82%  { opacity: 0.15; }
+      100% { opacity: 0;    transform: translateY(-16px) translateX(calc(var(--dx, 4px) * 1.3)); }
+    }
+
+    /* ── 一覧画面の下部ナビ ── */
+    .list-bottom-nav {
+      display: flex;
+      gap: 12px;
+      width: 100%;
+      margin-top: 20px;
+      padding-top: 12px;
+    }
   </style>
 </head>
 <body>
@@ -569,6 +578,7 @@
 
 <!-- ════ 1枚表示画面（ランダムでぽん） ════ -->
 <div id="screen-single" class="screen">
+  <button class="home-btn" onclick="showScreen('screen-top')">🏠 ホーム</button>
   <button class="back-btn" onclick="showScreen('screen-top')">← もどる</button>
   <div id="single-corgi" class="single-corgi"></div>
   <div class="single-cat-badge" id="single-cat-badge"></div>
@@ -590,18 +600,21 @@
 
 <!-- ════ カテゴリー一覧画面 ════ -->
 <div id="screen-list" class="screen">
+  <button class="home-btn" onclick="showScreen('screen-top')">🏠 ホーム</button>
   <button class="back-btn" onclick="showScreen('screen-single')">← もどる</button>
   <div style="width:100%; margin-bottom:16px;">
     <div class="list-cat-badge" id="list-cat-badge"></div>
   </div>
   <div class="word-list" id="word-list"></div>
+  <div class="list-bottom-nav">
+    <button class="btn btn-secondary" onclick="showScreen('screen-single')">← もどる</button>
+    <button class="btn btn-secondary" onclick="showScreen('screen-top')">🏠 ホーム</button>
+  </div>
 </div>
-
-<!-- ホームボタン（トップ以外で表示） -->
-<button class="home-btn" id="home-btn" onclick="showScreen('screen-top')">🏠 ホーム</button>
 
 <!-- ════ ランキング画面 ════ -->
 <div id="screen-ranking" class="screen">
+  <button class="home-btn" onclick="showScreen('screen-top')">🏠 ホーム</button>
   <button class="back-btn" onclick="showScreen('screen-top')">← もどる</button>
   <div class="ranking-header">
     <div style="font-size:1.6rem; margin-bottom:6px;">🏆</div>
@@ -611,6 +624,13 @@
   <div class="ranking-list" id="ranking-list"></div>
 </div>
 
+
+<!-- トップ画面：呪文カード周りのふわっとハート -->
+<span id="tfh1" class="top-float-heart" style="font-size:13px;color:#f4a0b0;--dx:-3px;animation-duration:3.8s;animation-delay:0s;">♥</span>
+<span id="tfh2" class="top-float-heart" style="font-size:11px;color:#e89aa4;--dx:5px;animation-duration:4.5s;animation-delay:1.2s;">♥</span>
+<span id="tfh3" class="top-float-heart" style="font-size:15px;color:#f4b8c4;--dx:4px;animation-duration:3.2s;animation-delay:2.1s;">♥</span>
+<span id="tfh4" class="top-float-heart" style="font-size:10px;color:#e0a0b0;--dx:-4px;animation-duration:5.0s;animation-delay:0.7s;">♥</span>
+<span id="tfh5" class="top-float-heart" style="font-size:12px;color:#f4a0b0;--dx:3px;animation-duration:4.1s;animation-delay:1.8s;">♥</span>
 
 <script>
   /* ════════════════════════════
@@ -643,6 +663,10 @@
       "そもそも人生は競争じゃない、遅れているわけでもない。",
       "やめてもいい。休んでもいい。と口に出すだけでも呼吸が深くなっていくよ。",
       "本音で大丈夫。弱音吐いて大丈夫。サボって大丈夫。ま、いっか！図太く生きよう！",
+      "無理せず、一歩一歩、ただ息をしているあなたは素晴らしいのです。",
+      "未来はどうせ手強い。脳みそ空っぽで行こう。",
+      "心が空っぽになったら、急いでポジティブなエネルギーを補充してください。",
+      "お互い様かって思えばやり過ごせる状況が多い。「お互い様」「仕方がない」「一期一会」「縁」。",
     ],
     "自分を責めてる・自己否定": [
       "自分自身と仲直りする。誰も許してくれなくても、わたしはわたしを許す。これでいいのだ。",
@@ -656,6 +680,11 @@
       "飽きたと言うより「満足した」「堪能できた」「やり切った」",
       "これが、今のベストです。これが、私のベスト。",
       "強さも弱さも、まぎれもなく私を形づくるかけがえのない構成要素。弱い部分を疎んじていると、自分の本当の姿が見えてこない。",
+      "自分にYES！答えが「イエス」になる自問自答をすることでも自己肯定感が上がる。",
+      "「今は責めることでしか、自分を守れないんだね」「責めるのが癖になるくらい、ずっと苦しかったんだね」「怖いままでいいよ、まだ武器を持っていてもいいよ」",
+      "同じことの繰り返しは、安心・安全が確保される場所を探す方法の1つ。繰り返しながら、着実に前に進んでる。全部ちゃんと前に進んでる。",
+      "「人間は欠損に恋をする」。弱いところ、欠けてるところ、不完全なところを愛してくれる人は世の中に沢山いる。",
+      "体験できなかった事も1つの体験。",
     ],
     "不安・ざわざわしてる": [
       "今、不安が来てるのは「事実」じゃなくて「感情」。なるべく事実だけを見る。",
@@ -668,6 +697,10 @@
       "「すごいなぁ」で終わる人は、自分と切り離せている人。自分はだめだと思うのは、相手と自分を同じコースで走らせてるから。",
       "自分のペースを守れる人は「比較」ではなく「観察」で人を見ている。「こういう在り方もあるんだな」と思えた時点で、自分の器が広がっている。",
       "自分が有利になるように思い込みをしてください。私は楽して良い。気楽でいい。軽やかでいい。みんな私の味方。",
+      "ネガティブ＝ダメ、ポジティブ＝良いってジャッジを捨てようね。雨が降ったら落ち込んで晴れたら喜ぶって生き方は疲れるじゃん。どっちもOKにしてこ！",
+      "上がったり、下がったり、は普通にある。天気のように、毎日毎時間変わる。",
+      "自分で安心を取りに行く。不安はあるようで実態はない。見えないおばけに怯えている。",
+      "なぜできないかじゃなく、どうしたらできるかを考えるのが大人。",
     ],
     "自信を取り戻したい": [
       "自分を安く見積もらない！大切にさせる存在！",
@@ -682,6 +715,10 @@
       "自分の境界線をはっきり示す。つぎはありませんよ。自分勝手な人って判断して、サヨナラします。",
       "「自分にしかない価値」が脳の迷子を止めてくれる。",
       "比較を手放すには、今の自分をそのまま認める練習を積み重ねる。完璧な日はこなくていい。「ある日」が重なって自信になる。",
+      "あなたはそう思うんだね、でも私は違う、私はこう思う！と言える自分でいる。支配されない。",
+      "ひとりよがりでも、譲れないことなら、それは正しく生きてるってこと！単細胞でいこう。",
+      "自分の魅力を男性に合わせる必要はない。自分のために可愛くなったほうが良い。女がブスになるのは、違う誰かになろうとしたとき。",
+      "めぐみはちゃんと働いて、自分の生活つくって、その上で丁寧に婚活もしてるじゃん？胸はっていいんだよ。",
     ],
     "自分に優しくしたい": [
       "嫌なことを無理してまで頑張る必要はどこにもないんだからね。",
@@ -689,6 +726,13 @@
       "私の今の働き方は、性に合ってる。自分を守るための道である。その時の自分に合う働き方でいい。",
       "他人の期待より、自分の納得を優先する。自分らしく生きることが、なによりも大切。他人の価値基準に縛られず、自分が納得する生き方を見つけていくことが幸せへのカギ",
       "余白を生み出すことに全力になる。それが女性の幸せ。",
+      "私はこういう生活を大切にしたいから、この働き方をしている。満足度が高い。",
+      "「逃げる」じゃなくて「選ぶ」。ストレスを避けて、自分に合った環境を選んでる。それでいいと思いますよ。",
+      "不安だから食べちゃう、ストレスで食べちゃう。それで少しでも落ち着くなら、いいじゃない。",
+      "苦手は人に頼ればいい。「みんなと一緒」の人生も必要ない。自分のペースで自分らしい幸せを見つけよう。",
+      "人生で大切なのは「優秀になること」じゃなくて「幸せに過ごすこと」だからね。",
+      "これを我慢したら、私の心や体が傷つく？YES→境界線、絶対に譲っちゃダメ。NO→完璧主義、スルーしてOK。",
+      "常識は18歳までに身につけた偏見のコレクション。大人の今、全部自分で決めていい。",
     ],
     "婚活・恋愛で疲れた": [
       "好きになってもらおうとするマインドはやめる。楽しもう。合わないならそれまで。",
@@ -698,6 +742,8 @@
       "合う人って、理由を並べなくても「また会おうかな」って自然に思える。",
       "ムカムカしたのは、あなたの心が「この人は私を大切にしてくれない」と警告を発していたからです。",
       "相手の長所より短所ばかり見えて苦しいなら、どんな恋人でも別れの時期",
+      "「愛している」は短所も好き。「好き」は長所を好き。人は短所を受け入れられた時に癒されます。",
+      "弱点をちょいちょい見せた方が、実は好かれる。戦略的に、少しだけチラ見せしてみよう。",
     ],
     "自分の気持ちがわからない": [
       "本当はどうしたい？「自分」が主語だよ！自分はどうしたいの？",
@@ -705,6 +751,10 @@
       "彼を責めるんじゃなくて常に、自分がどうしたいかに立ち返る",
       "あなたの人生、あなたが決めればいいんです",
       "わたしの感性はナビゲーター。GPSみたいに正確じゃないかもしれないけど、心の揺れや違和感をちゃんと拾って、進むべき方向を教えてくれる。",
+      "私センサーが警報を鳴らしてる時は逃げよう！",
+      "頭の中で勝手にネガティブに決めつけてるけど、現実はもっとポジティブかもしれない。待って、まだ確認してないよね？",
+      "話し合いは魔女裁判じゃなく、仲良くなるための作戦会議。",
+      "長期的に見て、本当に欲しいものに目を向ける。",
     ],
   };
 
@@ -830,14 +880,22 @@
   }
 
   /* ════════════════════════════
+     テキスト整形
+  ════════════════════════════ */
+  function formatQuote(text) {
+    const pattern = text.length >= 20 ? /[。、]/g : /。/g;
+    return text.replace(pattern, m => m + "\n").replace(/\n$/, "");
+  }
+
+  /* ════════════════════════════
      画面切替
   ════════════════════════════ */
   function showScreen(id) {
     document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
     document.getElementById(id).classList.add("active");
     window.scrollTo(0, 0);
-    // トップ以外でホームボタンを表示
-    document.getElementById("home-btn").classList.toggle("visible", id !== "screen-top");
+    document.body.classList.toggle("on-top", id === "screen-top");
+    document.querySelectorAll(".heart-bubble-wrapper").forEach(el => el.remove());
   }
 
   /* ════════════════════════════
@@ -881,7 +939,7 @@
     // テキスト（フェードイン）
     const quoteEl = document.getElementById("single-quote");
     quoteEl.style.opacity = "0";
-    setTimeout(() => { quoteEl.textContent = pick.quote; quoteEl.style.opacity = "1"; }, 120);
+    setTimeout(() => { quoteEl.textContent = formatQuote(pick.quote); quoteEl.style.opacity = "1"; }, 120);
 
     refreshSingleHeart();
     showScreen("screen-single");
@@ -913,7 +971,7 @@
     void icon.offsetWidth;
     icon.classList.add("pop");
 
-    fadeQuote(currentSingleQuote);
+    showSpeechBubble(currentSingleQuote);
   }
 
   /* ════════════════════════════
@@ -934,7 +992,8 @@
 
       const textEl = document.createElement("div");
       textEl.className = "word-text";
-      textEl.textContent = quote;
+      textEl.style.whiteSpace = "pre-line";
+      textEl.textContent = formatQuote(quote);
 
       const heartBtn = document.createElement("button");
       heartBtn.className = "heart-btn";
@@ -962,66 +1021,99 @@
     void icon.offsetWidth;
     icon.classList.add("pop");
 
-    fadeQuote(quote);
+    showSpeechBubble(quote);
   }
 
-  /* ── ふわっと演出（5か所・画面コーナーのみ） ── */
-  // カード・コーギー・ホームボタンと絶対に被らない5つの固定エリア
-  const FADE_POSITIONS = [
-    { top: "2%",    left: "2%",   maxW: "43vw", align: "left"   }, // 左上
-    { top: "2%",    right: "2%",  maxW: "43vw", align: "right"  }, // 右上（ホームより上）
-    { bottom: "3%", left: "2%",   maxW: "43vw", align: "left"   }, // 左下
-    { bottom: "3%", right: "2%",  maxW: "43vw", align: "right"  }, // 右下
-    { bottom: "11%",left: "50%",  maxW: "76vw", align: "center",
-      transform: "translateX(-50%)" },                              // 下中央
-  ];
-  const FADE_DURATION = 3800; // ms（CSSと合わせる）
-  const FADE_INTERVAL = 3800; // ms（1本消えたら次が出る）
+  /* ════════════════════════════
+     ハート吹き出し演出
+  ════════════════════════════ */
+  const BUBBLE_MAX_CHARS = 40;
 
-  // シャボン玉（wrapperの左上基点で配置）
-  const BUBBLES = [
-    { w: 16, h: 16, top: -14, left:  4,  bg: "rgba(214,63,106,0.22)", dur: 2.2, delay: 0   },
-    { w: 10, h: 10, top:  -8, left:  28, bg: "rgba(255,255,255,0.55)", dur: 1.7, delay: 0.5 },
-    { w: 18, h: 18, top:  22, left:  -2, bg: "rgba(232,154,164,0.28)", dur: 2.8, delay: 0.2 },
-    { w:  9, h:  9, top:  -5, left:  60, bg: "rgba(255,200,215,0.55)", dur: 1.5, delay: 0.8 },
-    { w: 14, h: 14, top:  20, left:  44, bg: "rgba(214,63,106,0.18)",  dur: 2.0, delay: 0.4 },
-    { w:  7, h:  7, top: -12, left:  88, bg: "rgba(255,255,255,0.45)", dur: 1.9, delay: 0.6 },
-  ];
+  function _showBubble(text, pos) {
+    if (document.body.classList.contains("on-top")) return;
 
-  function fadeQuote(text) {
-    FADE_POSITIONS.forEach((pos, i) => {
-      setTimeout(() => {
-        const wrapper = document.createElement("div");
-        wrapper.className   = "fade-wrapper";
-        wrapper.style.maxWidth  = pos.maxW;
-        wrapper.style.textAlign = pos.align;
-        if (pos.top)       wrapper.style.top       = pos.top;
-        if (pos.bottom)    wrapper.style.bottom     = pos.bottom;
-        if (pos.left)      wrapper.style.left       = pos.left;
-        if (pos.right)     wrapper.style.right      = pos.right;
-        if (pos.transform) wrapper.style.transform  = pos.transform;
+    const clipped = text.length > BUBBLE_MAX_CHARS ? text.slice(0, BUBBLE_MAX_CHARS) + "…" : text;
+    // 幅をテキスト量で決定（178～252px）
+    const w = Math.min(252, Math.max(178, 178 + Math.floor(clipped.length / 2) * 4));
+    const h = Math.round(w * 0.88);
 
-        const textEl = document.createElement("span");
-        textEl.className   = "fade-text";
-        textEl.textContent = text;
-        wrapper.appendChild(textEl);
+    const wrapper = document.createElement("div");
+    wrapper.className = "heart-bubble-wrapper";
 
-        BUBBLES.forEach(b => {
-          const bEl = document.createElement("div");
-          bEl.className        = "fade-bubble";
-          bEl.style.width      = b.w + "px";
-          bEl.style.height     = b.h + "px";
-          bEl.style.top        = b.top + "px";
-          bEl.style.left       = b.left + "px";
-          bEl.style.background = b.bg;
-          bEl.style.setProperty("--bur",    b.dur   + "s");
-          bEl.style.setProperty("--bdelay", b.delay + "s");
-          wrapper.appendChild(bEl);
-        });
+    // 位置（pos があれば固定位置、なければ右上）
+    if (pos) {
+      wrapper.style.top  = Math.max(8, pos.top - h - 8) + "px";
+      wrapper.style.left = Math.max(8, Math.min(pos.right + 4, window.innerWidth - w - 8)) + "px";
+    } else {
+      wrapper.style.top   = "80px";
+      wrapper.style.right = "12px";
+    }
 
-        document.body.appendChild(wrapper);
-        setTimeout(() => wrapper.remove(), FADE_DURATION + 300);
-      }, i * FADE_INTERVAL);
+    // ハート型SVG
+    const svgNS = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(svgNS, "svg");
+    svg.setAttribute("class", "bubble-heart-svg");
+    svg.setAttribute("width",  w);
+    svg.setAttribute("height", h);
+    svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+
+    const path = document.createElementNS(svgNS, "path");
+    const cx = w / 2, cy = h * 0.54;
+    const rx = w * 0.46, ry = h * 0.42;
+    path.setAttribute("d",
+      `M ${cx},${cy + ry * 0.85}
+       C ${cx - rx * 0.1},${cy + ry * 1.15} ${cx - rx * 0.4},${cy + ry * 1.08} ${cx - rx * 0.55},${cy + ry * 0.72}
+       C ${cx - rx * 0.9},${cy + ry * 0.52} ${cx - rx},${cy}
+       C ${cx - rx},${cy - ry * 0.56} ${cx - rx * 0.55},${cy - ry} ${cx},${cy - ry * 0.62}
+       C ${cx + rx * 0.55},${cy - ry} ${cx + rx},${cy - ry * 0.56} ${cx + rx},${cy}
+       C ${cx + rx},${cy + ry * 0.52} ${cx + rx * 0.9},${cy + ry * 0.52} ${cx + rx * 0.55},${cy + ry * 0.72}
+       C ${cx + rx * 0.4},${cy + ry * 1.08} ${cx + rx * 0.1},${cy + ry * 1.15} ${cx},${cy + ry * 0.85} Z`
+    );
+    path.setAttribute("fill", "#fff0f3");
+    path.setAttribute("stroke", "#f4a0b0");
+    path.setAttribute("stroke-width", "2");
+    svg.appendChild(path);
+    wrapper.appendChild(svg);
+
+    // テキスト
+    const textEl = document.createElement("div");
+    textEl.className = "bubble-text";
+    textEl.textContent = clipped;
+    textEl.style.width  = Math.round(w * 0.74) + "px";
+    textEl.style.left   = Math.round(w * 0.13) + "px";
+    textEl.style.top    = Math.round(h * 0.18) + "px";
+    wrapper.appendChild(textEl);
+
+    document.body.appendChild(wrapper);
+    setTimeout(() => wrapper.remove(), 10300);
+  }
+
+  function showSpeechBubble(text) {
+    const corgi = document.getElementById("single-corgi");
+    const rect  = corgi ? corgi.getBoundingClientRect() : null;
+    _showBubble(text, rect && rect.width > 0
+      ? { top: rect.top + window.scrollY + 8, right: rect.right + 6 }
+      : null
+    );
+  }
+
+  /* ════════════════════════════
+     トップ画面：ハートの位置調整
+  ════════════════════════════ */
+  function positionTopHearts() {
+    const card = document.querySelector(".spell-card");
+    if (!card) return;
+    const r = card.getBoundingClientRect();
+    const spots = [
+      { id: "tfh1", top: r.top - 14,              left: r.left + r.width * 0.28 },
+      { id: "tfh2", top: r.top + r.height * 0.18, left: r.right + 6 },
+      { id: "tfh3", top: r.top - 18,              left: r.right - r.width * 0.22 },
+      { id: "tfh4", top: r.bottom + 4,            left: r.left + r.width * 0.55 },
+      { id: "tfh5", top: r.top + r.height * 0.55, left: r.left - 18 },
+    ];
+    spots.forEach(({ id, top, left }) => {
+      const el = document.getElementById(id);
+      if (el) { el.style.top = top + "px"; el.style.left = left + "px"; el.style.right = ""; }
     });
   }
 
@@ -1138,8 +1230,11 @@
   }
 
   document.addEventListener("DOMContentLoaded", () => {
+    document.body.classList.add("on-top");
     newSpell();
     buildCategoryButtons();
+    positionTopHearts();
+    window.addEventListener("resize", positionTopHearts);
   });
 </script>
 </body>

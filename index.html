@@ -81,6 +81,59 @@
       letter-spacing: 0.06em;
     }
 
+    /* ── つぶやきエリア ── */
+    .tsubuyaki-card {
+      background: #fff;
+      border: 2px solid #f0c4cb;
+      border-radius: 20px;
+      width: 100%;
+      padding: 16px 18px;
+      margin-bottom: 26px;
+      box-shadow: 0 4px 14px rgba(201,123,132,0.08);
+    }
+    .tsubuyaki-textarea {
+      width: 100%;
+      border: 1.5px solid #f0c4cb;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 0.92rem;
+      color: #5a3d42;
+      line-height: 1.7;
+      resize: none;
+      outline: none;
+      font-family: inherit;
+      background: #fff8f9;
+      box-sizing: border-box;
+      transition: border-color 0.15s;
+    }
+    .tsubuyaki-textarea::placeholder { color: #d4a0a8; }
+    .tsubuyaki-textarea:focus { border-color: #e08090; background: #fff; }
+    .tsubuyaki-btn {
+      margin-top: 12px;
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #f4a0b0, #e07888);
+      border: none;
+      border-radius: 12px;
+      color: #fff;
+      font-size: 0.92rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.15s;
+    }
+    .tsubuyaki-btn:hover  { opacity: 0.88; transform: translateY(-1px); }
+    .tsubuyaki-btn:active { transform: scale(0.98); }
+    .tsubuyaki-btn:disabled { opacity: 0.55; cursor: default; transform: none; }
+    .tsubuyaki-loading {
+      text-align: center;
+      font-size: 0.82rem;
+      color: #c97b84;
+      margin-top: 10px;
+      min-height: 20px;
+      letter-spacing: 0.06em;
+    }
+
     /* ── トップ：セクションラベル ── */
     .section-label {
       font-size: 0.74rem;
@@ -502,6 +555,16 @@
   <button class="ranking-top-btn" onclick="showRanking()">
     🏆 &nbsp;よく見た言葉ランキング
   </button>
+
+  <div class="section-label" style="margin-top:10px;">💬 今の気持ちをつぶやく</div>
+  <div class="tsubuyaki-card">
+    <textarea class="tsubuyaki-textarea" id="tsubuyaki-input"
+      rows="3" placeholder="今どんな気持ち？自由に書いてね…"></textarea>
+    <button class="tsubuyaki-btn" id="tsubuyaki-btn" onclick="findWord()">
+      ことばを探す ✦
+    </button>
+    <div class="tsubuyaki-loading" id="tsubuyaki-loading"></div>
+  </div>
 </div>
 
 <!-- ════ 1枚表示画面（ランダムでぽん） ════ -->
@@ -1008,6 +1071,72 @@
   /* ════════════════════════════
      初期化
   ════════════════════════════ */
+  /* ════════════════════════════
+     つぶやき → Claudeがことばを選ぶ
+  ════════════════════════════ */
+  async function findWord() {
+    const feeling = document.getElementById("tsubuyaki-input").value.trim();
+    if (!feeling) return;
+
+    const btn     = document.getElementById("tsubuyaki-btn");
+    const loading = document.getElementById("tsubuyaki-loading");
+
+    // ローディング表示
+    btn.disabled     = true;
+    btn.textContent  = "探してるよ… 🐾";
+    loading.textContent = "コーギーがぴったりの言葉を選んでいます…";
+
+    // 全言葉をリスト化
+    const quotes = [];
+    Object.entries(words).forEach(([cat, qs]) => {
+      qs.forEach(q => quotes.push({ quote: q, cat }));
+    });
+
+    try {
+      const res = await fetch("/.netlify/functions/claude", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ feeling, quotes }),
+      });
+
+      if (!res.ok) throw new Error("API error");
+
+      const { index } = await res.json();
+      const matched = quotes[index];
+
+      if (!matched) throw new Error("index out of range");
+
+      // 結果を1枚表示画面で表示
+      singleMode         = null;
+      currentSingleQuote = matched.quote;
+      currentSingleCat   = matched.cat;
+
+      document.getElementById("single-corgi").innerHTML =
+        FACES[CATEGORY_FACE[matched.cat] || "gentle"];
+      document.getElementById("single-cat-badge").textContent = matched.cat;
+
+      const quoteEl = document.getElementById("single-quote");
+      quoteEl.style.opacity = "0";
+      setTimeout(() => {
+        quoteEl.textContent = formatQuote(matched.quote);
+        quoteEl.style.opacity = "1";
+      }, 120);
+
+      refreshSingleHeart();
+      showScreen("screen-single");
+
+      // リセット
+      document.getElementById("tsubuyaki-input").value = "";
+
+    } catch (e) {
+      loading.textContent = "うまく取得できませんでした。もう一度試してね 🙏";
+    } finally {
+      btn.disabled    = false;
+      btn.textContent = "ことばを探す ✦";
+      setTimeout(() => { loading.textContent = ""; }, 4000);
+    }
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
     newSpell();
     buildCategoryButtons();

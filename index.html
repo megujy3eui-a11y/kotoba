@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ことばツール</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+      background: #fff8f6;
+      min-height: 100vh;
+    }
+
+    /* ── 共通スクリーン ── */
+    .screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 28px 18px 56px;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    .screen.active { display: flex; }
+
+    h1 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #c97b84;
+      letter-spacing: 0.2em;
+    }
+
+    .back-btn {
+      align-self: flex-start;
+      background: none;
+      border: none;
+      color: #c97b84;
+      font-size: 0.88rem;
+      cursor: pointer;
+      padding: 4px 0;
+      margin-bottom: 20px;
+      letter-spacing: 0.04em;
+    }
+    .back-btn:hover { opacity: 0.65; }
+
+    /* ── トップ：呪文カード ── */
+    .spell-card {
+      background: linear-gradient(135deg, #fde8eb 0%, #fff4f6 100%);
+      border: 2px solid #f0c4cb;
+      border-radius: 20px;
+      width: 100%;
+      padding: 20px 22px 16px;
+      margin-bottom: 26px;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(201,123,132,0.1);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .spell-card:hover  { transform: translateY(-2px); box-shadow: 0 7px 20px rgba(201,123,132,0.15); }
+    .spell-card:active { transform: scale(0.98); }
+
+    .spell-label {
+      font-size: 0.7rem;
+      color: #e0a0aa;
+      letter-spacing: 0.2em;
+      margin-bottom: 10px;
+    }
+    .spell-text {
+      font-size: 1.08rem;
+      font-weight: 700;
+      color: #5a3d42;
+      line-height: 1.65;
+      transition: opacity 0.15s;
+    }
+    .spell-hint {
+      font-size: 0.68rem;
+      color: #d4a0a8;
+      margin-top: 12px;
+      text-align: right;
+      letter-spacing: 0.06em;
+    }
+
+    /* ── トップ：セクションラベル ── */
+    .section-label {
+      font-size: 0.74rem;
+      color: #c97b84;
+      letter-spacing: 0.14em;
+      margin-bottom: 12px;
+      width: 100%;
+    }
+
+    /* ── カテゴリーボタン ── */
+    .cat-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 100%;
+      margin-bottom: 14px;
+    }
+    .cat-btn {
+      background: #fff;
+      border: 2px solid #f0c4cb;
+      border-radius: 999px;
+      color: #c97b84;
+      font-size: 0.92rem;
+      font-weight: 600;
+      padding: 13px 22px;
+      cursor: pointer;
+      text-align: left;
+      letter-spacing: 0.04em;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .cat-btn:hover  { background: #fde8eb; transform: translateY(-1px); }
+    .cat-btn:active { transform: scale(0.98); }
+
+    /* ── ランキングボタン（トップ） ── */
+    .ranking-top-btn {
+      width: 100%;
+      background: #fff;
+      border: 2px solid #e8b8c0;
+      border-radius: 14px;
+      color: #c97b84;
+      font-size: 0.92rem;
+      font-weight: 600;
+      padding: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 8px;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .ranking-top-btn:hover  { background: #fde8eb; transform: translateY(-1px); }
+    .ranking-top-btn:active { transform: scale(0.98); }
+
+    /* ── カテゴリー一覧：ヘッダー ── */
+    .list-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      width: 100%;
+      margin-bottom: 20px;
+    }
+    .list-corgi { width: 88px; height: 102px; flex-shrink: 0; }
+    .list-corgi svg { width: 100%; height: 100%; }
+
+    .list-cat-badge {
+      display: inline-block;
+      font-size: 0.76rem;
+      color: #e0a0aa;
+      letter-spacing: 0.14em;
+      background: #fde8eb;
+      padding: 4px 14px;
+      border-radius: 999px;
+      margin-bottom: 8px;
+    }
+    .list-sub {
+      font-size: 0.76rem;
+      color: #bfa8ab;
+    }
+
+    /* ── 言葉リスト ── */
+    .word-list {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .word-item {
+      background: #fff;
+      border: 1.5px solid #f0c4cb;
+      border-radius: 16px;
+      padding: 18px 14px 18px 20px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      box-shadow: 0 2px 8px rgba(201,123,132,0.05);
+    }
+    .word-text {
+      flex: 1;
+      font-size: 0.9rem;
+      color: #5a3d42;
+      line-height: 2.0;
+    }
+    .heart-count { display: none; }
+    .heart-btn {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 6px 8px;
+      border-radius: 10px;
+      transition: background 0.15s;
+    }
+    .heart-btn:hover  { background: #fde8eb; }
+    .heart-btn:active { background: #fbd0d8; }
+    .heart-icon {
+      font-size: 1.35rem;
+      line-height: 1;
+      display: block;
+    }
+    .heart-icon.pop { animation: heartPop 0.22s ease; }
+    @keyframes heartPop {
+      0%   { transform: scale(1); }
+      50%  { transform: scale(1.55); }
+      100% { transform: scale(1); }
+    }
+    .heart-count {
+      font-size: 0.68rem;
+      color: #e0a0aa;
+      font-weight: 700;
+      min-width: 16px;
+      text-align: center;
+      min-height: 12px;
+    }
+
+    /* ── 1枚表示画面（ランダムでぽん） ── */
+    .single-corgi { width: 140px; height: 162px; margin-bottom: 10px; }
+    .single-corgi svg { width: 100%; height: 100%; }
+
+    .single-cat-badge {
+      display: inline-block;
+      font-size: 0.74rem;
+      color: #e0a0aa;
+      letter-spacing: 0.14em;
+      background: #fde8eb;
+      padding: 4px 14px;
+      border-radius: 999px;
+      margin-bottom: 18px;
+    }
+    .single-card {
+      background: #fff;
+      border: 2px solid #f0c4cb;
+      border-radius: 20px;
+      padding: 28px 24px;
+      width: 100%;
+      text-align: center;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 16px rgba(201,123,132,0.08);
+    }
+    .single-quote {
+      font-size: 1rem;
+      color: #5a3d42;
+      line-height: 1.9;
+    }
+    .single-heart-row {
+      display: flex;
+      justify-content: center;
+      margin-top: 16px;
+    }
+    .single-heart-btn {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: none;
+      border: 1.5px solid #f0c4cb;
+      border-radius: 999px;
+      padding: 6px 16px;
+      cursor: pointer;
+      font-size: 0.88rem;
+      color: #e0a0aa;
+      font-weight: 600;
+      transition: background 0.15s;
+    }
+    .single-heart-btn:hover  { background: #fde8eb; }
+    .single-heart-btn:active { background: #fbd0d8; }
+    .single-heart-icon { font-size: 1.1rem; }
+    .single-heart-icon.pop { animation: heartPop 0.22s ease; }
+
+    .action-btns {
+      display: flex;
+      gap: 12px;
+      width: 100%;
+    }
+    .btn {
+      flex: 1;
+      padding: 14px;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary {
+      background: #e89aa4;
+      border: none;
+      color: #fff;
+    }
+    .btn-primary:hover { background: #d9848e; }
+    .btn-secondary {
+      background: #fff;
+      border: 2px solid #f0c4cb;
+      color: #c97b84;
+    }
+    .btn-secondary:hover { background: #fde8eb; }
+
+    /* ── 一覧ボタン（1枚表示画面の右下） ── */
+    .list-link-btn {
+      align-self: flex-end;
+      margin-top: 14px;
+      background: none;
+      border: 1.5px solid #f0c4cb;
+      border-radius: 999px;
+      color: #c97b84;
+      font-size: 0.76rem;
+      font-weight: 600;
+      padding: 6px 16px;
+      cursor: pointer;
+      letter-spacing: 0.08em;
+      transition: background 0.15s;
+    }
+    .list-link-btn:hover { background: #fde8eb; }
+
+    /* ── シンプル一覧（テキストのみ） ── */
+    .simple-list {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .simple-list-item {
+      background: #fff;
+      border: 1.5px solid #f0c4cb;
+      border-radius: 12px;
+      padding: 13px 16px;
+      font-size: 0.9rem;
+      color: #5a3d42;
+      line-height: 1.8;
+      box-shadow: 0 2px 6px rgba(201,123,132,0.04);
+    }
+
+    /* ── ランダムでぽんボタン（トップ） ── */
+    .random-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #e89aa4, #d4788a);
+      border: none;
+      border-radius: 14px;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 700;
+      padding: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 18px;
+      box-shadow: 0 4px 14px rgba(201,123,132,0.25);
+      letter-spacing: 0.06em;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .random-btn:hover  { opacity: 0.88; transform: translateY(-1px); }
+    .random-btn:active { transform: scale(0.98); }
+
+    /* ── ランキング ── */
+    .ranking-header {
+      text-align: center;
+      width: 100%;
+      margin-bottom: 24px;
+    }
+    .ranking-list {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .rank-item {
+      background: #fff;
+      border: 1.5px solid #f0c4cb;
+      border-radius: 14px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      box-shadow: 0 2px 8px rgba(201,123,132,0.05);
+    }
+    .rank-num {
+      font-size: 1.2rem;
+      flex-shrink: 0;
+      padding-top: 1px;
+      min-width: 30px;
+      text-align: center;
+    }
+    .rank-num.normal {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #d4a8b0;
+      padding-top: 4px;
+    }
+    .rank-body { flex: 1; min-width: 0; }
+    .rank-text {
+      font-size: 0.9rem;
+      color: #5a3d42;
+      line-height: 1.8;
+    }
+    .rank-cat {
+      font-size: 0.68rem;
+      color: #d4a8b0;
+      margin-top: 4px;
+    }
+    .rank-heart {
+      flex-shrink: 0;
+      font-size: 0.86rem;
+      font-weight: 700;
+      color: #e89aa4;
+      display: flex;
+      align-items: flex-start;
+      gap: 2px;
+      padding-top: 3px;
+    }
+    .empty-state {
+      text-align: center;
+      color: #d4a8b0;
+      font-size: 0.88rem;
+      padding: 48px 0;
+      line-height: 2.2;
+    }
+
+    /* ── ふわっとアニメーション ── */
+    .fade-wrapper {
+      position: fixed;
+      display: inline-block;
+      pointer-events: none;
+      z-index: 200;
+      opacity: 0;
+      animation: fadeInOut 3.8s ease forwards;
+    }
+    .fade-text {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #d63f6a;
+      line-height: 1.65;
+      word-break: break-word;
+    }
+    .fade-bubble {
+      position: absolute;
+      border-radius: 50%;
+      border: 1.5px solid rgba(255, 255, 255, 0.72);
+      animation: bubbleFloat var(--bur, 2s) ease-in-out infinite var(--bdelay, 0s);
+    }
+    @keyframes fadeInOut {
+      0%   { opacity: 0; transform: translateY(10px) scale(0.9);  }
+      18%  { opacity: 1; transform: translateY(0px)  scale(1);    }
+      72%  { opacity: 1; transform: translateY(-4px) scale(1);    }
+      100% { opacity: 0; transform: translateY(-14px) scale(0.95);}
+    }
+    @keyframes bubbleFloat {
+      0%, 100% { transform: translateY(0px);  }
+      50%      { transform: translateY(-9px); }
+    }
+
+    /* ── ホームボタン（固定・コーギー右上） ── */
+    .home-btn {
+      position: fixed;
+      top: 78px;
+      left: calc(50% + 54px);
+      background: #fff;
+      border: 1.5px solid #f0c4cb;
+      border-radius: 999px;
+      color: #c97b84;
+      font-size: 0.74rem;
+      font-weight: 600;
+      padding: 6px 14px;
+      cursor: pointer;
+      z-index: 150;
+      display: none;
+      letter-spacing: 0.06em;
+      box-shadow: 0 2px 8px rgba(201,123,132,0.12);
+      transition: background 0.15s;
+    }
+    .home-btn:hover  { background: #fde8eb; }
+    .home-btn.visible { display: block; }
+  </style>
+</head>
+<body>
+
+<!-- ════ トップ画面 ════ -->
+<div id="screen-top" class="screen active">
+  <div style="text-align:center; width:100%; margin-bottom:22px; padding-top:4px;">
+    <div style="font-size:1.5rem; margin-bottom:4px;">🌸</div>
+    <h1>ことばツール</h1>
+  </div>
+
+  <div class="spell-card" onclick="newSpell(this)">
+    <div class="spell-label">✦ 今日の呪文 ✦</div>
+    <div class="spell-text" id="spell-text"></div>
+    <div class="spell-hint">タップで変える ↻</div>
+  </div>
+
+  <div class="section-label">📂 カテゴリーから探す</div>
+  <div class="cat-grid" id="cat-grid"></div>
+
+  <button class="ranking-top-btn" onclick="showRanking()">
+    🏆 &nbsp;よく見た言葉ランキング
+  </button>
+</div>
+
+<!-- ════ 1枚表示画面（ランダムでぽん） ════ -->
+<div id="screen-single" class="screen">
+  <button class="back-btn" onclick="showScreen('screen-top')">← もどる</button>
+  <div id="single-corgi" class="single-corgi"></div>
+  <div class="single-cat-badge" id="single-cat-badge"></div>
+  <div class="single-card">
+    <p class="single-quote" id="single-quote"></p>
+    <div class="single-heart-row">
+      <button class="single-heart-btn" id="single-heart-btn" onclick="tapSingleHeart()">
+        <span class="single-heart-icon" id="single-heart-icon">♡</span>
+        <span id="single-heart-count"></span>
+      </button>
+    </div>
+  </div>
+  <div class="action-btns">
+    <button class="btn btn-secondary" onclick="showScreen('screen-top')">← 戻る</button>
+    <button class="btn btn-primary" onclick="nextSingle()">もう1つ ✦</button>
+  </div>
+  <button class="list-link-btn" onclick="showList(currentSingleCat)">一覧を見る</button>
+</div>
+
+<!-- ════ カテゴリー一覧画面 ════ -->
+<div id="screen-list" class="screen">
+  <button class="back-btn" onclick="showScreen('screen-single')">← もどる</button>
+  <div style="width:100%; margin-bottom:16px;">
+    <div class="list-cat-badge" id="list-cat-badge"></div>
+  </div>
+  <div class="word-list" id="word-list"></div>
+</div>
+
+<!-- ホームボタン（トップ以外で表示） -->
+<button class="home-btn" id="home-btn" onclick="showScreen('screen-top')">🏠 ホーム</button>
+
+<!-- ════ ランキング画面 ════ -->
+<div id="screen-ranking" class="screen">
+  <button class="back-btn" onclick="showScreen('screen-top')">← もどる</button>
+  <div class="ranking-header">
+    <div style="font-size:1.6rem; margin-bottom:6px;">🏆</div>
+    <h1>よく見た言葉ランキング</h1>
+    <div style="font-size:0.74rem; color:#d4a8b0; margin-top:8px; letter-spacing:0.08em;">ハートを押した回数順</div>
+  </div>
+  <div class="ranking-list" id="ranking-list"></div>
+</div>
+
+
+<script>
+  /* ════════════════════════════
+     呪文フレーズ
+  ════════════════════════════ */
+  const SPELLS = [
+    "これでいいのだ",
+    "今の私にできることだけすればいい",
+    "悩んでいるなら、課題にするなら何だろう？",
+    "私はここにいるだけで役割を果たしている",
+    "いいや、死ぬわけじゃないし",
+    "嫌っていいよ、これが私なんでヨロシク",
+    "なんとかなる、いつもなんとかしてきた",
+    "一拍待ってみよう",
+  ];
+
+  /* ════════════════════════════
+     言葉データ
+  ════════════════════════════ */
+  const words = {
+    "しんどい・落ち込んでる": [
+      "いいや！死ぬわけじゃないし。いつも乗り越えてきたでしょ？",
+      "今日を生きているだけでよろしい。今はつらくても、必ずトンネルの出口はあります。",
+      "大丈夫、一緒に考えよう",
+      "でもね、まだ大丈夫なの。アナタの人生、なんにも終わってないの。もっといい人に出会う途中だから！",
+      "孤独ってやつは厄介。思考を鈍らせ、悪いのは自分だと思わせようとしてくる。",
+      "人生なんて、起こった直後は最悪！と思っても時間が経ってみるとむしろよかったって思えることばかりだよ",
+      "なる様にしかなりません。でも、これまでもなんとかなってきたはず。だからなんとかなる。",
+      "焦るな。ベストなタイミングが必ず来る！素晴らしいものに導かれている途中なんだと思う",
+      "そもそも人生は競争じゃない、遅れているわけでもない。",
+      "やめてもいい。休んでもいい。と口に出すだけでも呼吸が深くなっていくよ。",
+      "本音で大丈夫。弱音吐いて大丈夫。サボって大丈夫。ま、いっか！図太く生きよう！",
+    ],
+    "自分を責めてる・自己否定": [
+      "自分自身と仲直りする。誰も許してくれなくても、わたしはわたしを許す。これでいいのだ。",
+      "これでいいのだ。問題ない。起きたことは必要。私は何も悪くない。",
+      "大丈夫、これくらいならバチは当たらない。人生レベルでは全然大事じゃない。",
+      "自分の出来ることだけすればいい。昨日の自分と比べよう。出来たことに目を向けよう。",
+      "自分の正常で考える。いつだって私の価値は損なわれない。",
+      "遠回りって、合わない道を無理に進むことのほうがよっぽど遠回りじゃない？",
+      "その調子だよ。それで大丈夫だからね。わたしはどこに居てもわたし。どこ行ってもちゃんとやってる。",
+      "人間はミスもする。ミスも含めて縁です。ミスしてダメになったものは縁がなかったんです。",
+      "飽きたと言うより「満足した」「堪能できた」「やり切った」",
+      "これが、今のベストです。これが、私のベスト。",
+      "強さも弱さも、まぎれもなく私を形づくるかけがえのない構成要素。弱い部分を疎んじていると、自分の本当の姿が見えてこない。",
+    ],
+    "不安・ざわざわしてる": [
+      "今、不安が来てるのは「事実」じゃなくて「感情」。なるべく事実だけを見る。",
+      "準備が整ってない、が近いかもなー。それもありかも。",
+      "水は決して傷つかない。それはどこまでも柔らかいからなんよ。どこまでも柔らかくいよう",
+      "比較をやめたいなら、今の自分の満ちているところを確認する。",
+      "比較してしまう人ほど「未来の自分」を想像できていない。「理想の他人」ではなく「理想の自分」を先に描こう。",
+      "悩み・不安を課題・プロジェクトに昇華させる。提案型、試す、になり進みやすくなる。",
+      "他人と比べる癖は「今の自分を否定する練習」になってしまう。比較をやめたいなら、今の自分の満ちているところを確認する。",
+      "「すごいなぁ」で終わる人は、自分と切り離せている人。自分はだめだと思うのは、相手と自分を同じコースで走らせてるから。",
+      "自分のペースを守れる人は「比較」ではなく「観察」で人を見ている。「こういう在り方もあるんだな」と思えた時点で、自分の器が広がっている。",
+      "自分が有利になるように思い込みをしてください。私は楽して良い。気楽でいい。軽やかでいい。みんな私の味方。",
+    ],
+    "自信を取り戻したい": [
+      "自分を安く見積もらない！大切にさせる存在！",
+      "私はここにいるだけで、役割を果たしている。",
+      "結婚してもしなくても、何があっても自分は自分だし、いつだって「私は最強」だよ",
+      "嫌われるかもより、嫌っていいよ、これが私なんでヨロシク！って態度の女の方が余裕で好かれてる",
+      "もうすでに素敵な女性なのです！私と出会えるなんて、なんてラッキーな男性なんだと思うようにする",
+      "胸はっていいんだよ。相手に気を遣う必要ゼロ。",
+      "嫌われても大丈夫です。自分らしく生きて、嫌われてください。そうすれば本当に好きな人に出会えます。",
+      "内向型が苦手なのは「人と話すこと」じゃないです。単に「瞬発的会話という競技が向いていない」だけなんです。",
+      "少数の人に理解してもらえればいいです。誰にも理解してもらえないなら自分と親友になればいいです。",
+      "自分の境界線をはっきり示す。つぎはありませんよ。自分勝手な人って判断して、サヨナラします。",
+      "「自分にしかない価値」が脳の迷子を止めてくれる。",
+      "比較を手放すには、今の自分をそのまま認める練習を積み重ねる。完璧な日はこなくていい。「ある日」が重なって自信になる。",
+    ],
+    "自分に優しくしたい": [
+      "嫌なことを無理してまで頑張る必要はどこにもないんだからね。",
+      "世間的には常識なことでも私の心が嫌だ、と言ってるんだから。無理しない。やらない。自分に一番優しくいる。",
+      "私の今の働き方は、性に合ってる。自分を守るための道である。その時の自分に合う働き方でいい。",
+      "他人の期待より、自分の納得を優先する。自分らしく生きることが、なによりも大切。他人の価値基準に縛られず、自分が納得する生き方を見つけていくことが幸せへのカギ",
+      "余白を生み出すことに全力になる。それが女性の幸せ。",
+    ],
+    "婚活・恋愛で疲れた": [
+      "好きになってもらおうとするマインドはやめる。楽しもう。合わないならそれまで。",
+      "婚活で詰むのは、見える情報に寄りかかるから。「会った後の自分の状態」が大事。",
+      "「私、頑張ってた？それともほどけてた？」答えはそこに出ます。",
+      "「悪い人じゃない」＝「私に合う人」じゃない。違和感に目をつぶらない。",
+      "合う人って、理由を並べなくても「また会おうかな」って自然に思える。",
+      "ムカムカしたのは、あなたの心が「この人は私を大切にしてくれない」と警告を発していたからです。",
+      "相手の長所より短所ばかり見えて苦しいなら、どんな恋人でも別れの時期",
+    ],
+    "自分の気持ちがわからない": [
+      "本当はどうしたい？「自分」が主語だよ！自分はどうしたいの？",
+      "自分の本音にたどり着くまで、「待つ」方がいいんじゃないかなと。「一拍待つ」というコミュニケーション。",
+      "彼を責めるんじゃなくて常に、自分がどうしたいかに立ち返る",
+      "あなたの人生、あなたが決めればいいんです",
+      "わたしの感性はナビゲーター。GPSみたいに正確じゃないかもしれないけど、心の揺れや違和感をちゃんと拾って、進むべき方向を教えてくれる。",
+    ],
+  };
+
+  /* ════════════════════════════
+     カテゴリー → 表情マッピング
+  ════════════════════════════ */
+  const CATEGORY_FACE = {
+    "しんどい・落ち込んでる":   "cheer",
+    "自信を取り戻したい":       "cheer",
+    "自分を責めてる・自己否定": "gentle",
+    "自分に優しくしたい":       "gentle",
+    "婚活・恋愛で疲れた":       "gentle",
+    "不安・ざわざわしてる":     "think",
+    "自分の気持ちがわからない": "think",
+  };
+
+  /* ════════════════════════════
+     コーギーSVG（3種類）
+  ════════════════════════════ */
+  const FACES = {
+    cheer: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 155 178">
+      <path d="M37,62 L16,6 L58,46 Z" fill="#E8913A"/>
+      <path d="M37,59 L22,12 L55,44 Z" fill="#FFAA88"/>
+      <path d="M91,62 L112,6 L70,46 Z" fill="#E8913A"/>
+      <path d="M91,59 L106,12 L73,44 Z" fill="#FFAA88"/>
+      <circle cx="64" cy="72" r="37" fill="#E8913A"/>
+      <ellipse cx="64" cy="83" rx="26" ry="20" fill="#FFF0DC"/>
+      <circle cx="51" cy="69" r="5.5" fill="#3D2010"/>
+      <circle cx="77" cy="69" r="5.5" fill="#3D2010"/>
+      <circle cx="53" cy="67" r="2" fill="white"/>
+      <circle cx="79" cy="67" r="2" fill="white"/>
+      <ellipse cx="40" cy="78" rx="9" ry="6" fill="#FFB3C1" opacity="0.55"/>
+      <ellipse cx="88" cy="78" rx="9" ry="6" fill="#FFB3C1" opacity="0.55"/>
+      <ellipse cx="64" cy="80" rx="5" ry="3.5" fill="#3D2010"/>
+      <ellipse cx="62" cy="140" rx="46" ry="40" fill="#E8913A"/>
+      <ellipse cx="62" cy="145" rx="30" ry="28" fill="#FFF0DC"/>
+      <ellipse cx="38" cy="170" rx="14" ry="9" fill="#E8913A"/>
+      <ellipse cx="38" cy="169" rx="9" ry="6" fill="#FFF0DC"/>
+      <path d="M90,126 Q118,104 112,72" stroke="#E8913A" stroke-width="17" fill="none" stroke-linecap="round"/>
+      <circle cx="111" cy="68" r="14" fill="#E8913A"/>
+      <ellipse cx="111" cy="70" rx="9" ry="7" fill="#FFF0DC"/>
+      <path d="M124,50 L126,41 L128,50 L137,52 L128,54 L126,63 L124,54 L115,52Z" fill="#FFE040"/>
+      <path d="M135,30 L136.5,25 L138,30 L143,31.5 L138,33 L136.5,38 L135,33 L130,31.5Z" fill="#FFE040" opacity="0.85"/>
+      <circle cx="144" cy="46" r="3.5" fill="#FFE040" opacity="0.7"/>
+    </svg>`,
+
+    gentle: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 155 178">
+      <path d="M39,62 L18,6 L60,46 Z" fill="#E8913A"/>
+      <path d="M39,59 L24,12 L57,44 Z" fill="#FFAA88"/>
+      <path d="M95,62 L116,6 L74,46 Z" fill="#E8913A"/>
+      <path d="M95,59 L110,12 L77,44 Z" fill="#FFAA88"/>
+      <circle cx="67" cy="72" r="37" fill="#E8913A"/>
+      <ellipse cx="67" cy="83" rx="26" ry="20" fill="#FFF0DC"/>
+      <circle cx="54" cy="69" r="5.5" fill="#3D2010"/>
+      <circle cx="80" cy="69" r="5.5" fill="#3D2010"/>
+      <circle cx="56" cy="67" r="2" fill="white"/>
+      <circle cx="82" cy="67" r="2" fill="white"/>
+      <path d="M49,73 Q54,77 59,73" stroke="#3D2010" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.45"/>
+      <path d="M75,73 Q80,77 85,73" stroke="#3D2010" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.45"/>
+      <ellipse cx="43" cy="79" rx="9" ry="6" fill="#FFB3C1" opacity="0.55"/>
+      <ellipse cx="91" cy="79" rx="9" ry="6" fill="#FFB3C1" opacity="0.55"/>
+      <ellipse cx="67" cy="80" rx="5" ry="3.5" fill="#3D2010"/>
+      <path d="M57,88 Q67,97 77,88" stroke="#3D2010" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <ellipse cx="67" cy="141" rx="48" ry="40" fill="#E8913A"/>
+      <ellipse cx="67" cy="146" rx="31" ry="29" fill="#FFF0DC"/>
+      <ellipse cx="43" cy="172" rx="14" ry="9" fill="#E8913A"/>
+      <ellipse cx="43" cy="171" rx="9" ry="6" fill="#FFF0DC"/>
+      <ellipse cx="91" cy="172" rx="14" ry="9" fill="#E8913A"/>
+      <ellipse cx="91" cy="171" rx="9" ry="6" fill="#FFF0DC"/>
+      <ellipse cx="116" cy="128" rx="17" ry="21" fill="#FFF0DC" transform="rotate(22,116,128)"/>
+      <ellipse cx="116" cy="127" rx="10" ry="13" fill="white" opacity="0.5" transform="rotate(22,116,127)"/>
+    </svg>`,
+
+    think: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 155 178">
+      <g transform="rotate(16, 64, 74)">
+        <path d="M37,62 L16,6 L58,46 Z" fill="#E8913A"/>
+        <path d="M37,59 L22,12 L55,44 Z" fill="#FFAA88"/>
+        <path d="M91,58 L114,4 L70,44 Z" fill="#E8913A"/>
+        <path d="M91,55 L108,10 L73,42 Z" fill="#FFAA88"/>
+        <circle cx="64" cy="72" r="37" fill="#E8913A"/>
+        <ellipse cx="64" cy="83" rx="26" ry="20" fill="#FFF0DC"/>
+        <circle cx="51" cy="69" r="5.5" fill="#3D2010"/>
+        <circle cx="77" cy="68" r="6.5" fill="#3D2010"/>
+        <circle cx="53" cy="67" r="2" fill="white"/>
+        <circle cx="79" cy="66" r="2.2" fill="white"/>
+        <ellipse cx="40" cy="79" rx="9" ry="6" fill="#FFB3C1" opacity="0.55"/>
+        <ellipse cx="88" cy="78" rx="9" ry="6" fill="#FFB3C1" opacity="0.55"/>
+        <ellipse cx="64" cy="80" rx="5" ry="3.5" fill="#3D2010"/>
+      </g>
+      <ellipse cx="60" cy="140" rx="46" ry="40" fill="#E8913A"/>
+      <ellipse cx="60" cy="145" rx="30" ry="28" fill="#FFF0DC"/>
+      <ellipse cx="36" cy="170" rx="14" ry="9" fill="#E8913A"/>
+      <ellipse cx="36" cy="169" rx="9" ry="6" fill="#FFF0DC"/>
+      <path d="M82,124 Q100,108 93,84" stroke="#E8913A" stroke-width="15" fill="none" stroke-linecap="round"/>
+      <circle cx="92" cy="80" r="13" fill="#E8913A"/>
+      <circle cx="92" cy="81" r="8.5" fill="#FFF0DC"/>
+      <text x="104" y="50" font-size="26" font-weight="bold" fill="#E8D040" font-family="sans-serif" opacity="0.9">?</text>
+    </svg>`,
+  };
+
+  /* ════════════════════════════
+     localStorage ハート管理
+  ════════════════════════════ */
+  function getHearts() {
+    return JSON.parse(localStorage.getItem("kotoba_hearts") || "{}");
+  }
+  function saveHearts(h) {
+    localStorage.setItem("kotoba_hearts", JSON.stringify(h));
+  }
+
+  /* ════════════════════════════
+     呪文
+  ════════════════════════════ */
+  let lastSpellIdx = -1;
+  function newSpell() {
+    let idx;
+    do { idx = Math.floor(Math.random() * SPELLS.length); }
+    while (idx === lastSpellIdx && SPELLS.length > 1);
+    lastSpellIdx = idx;
+    const el = document.getElementById("spell-text");
+    el.style.opacity = "0";
+    setTimeout(() => { el.textContent = SPELLS[idx]; el.style.opacity = "1"; }, 140);
+  }
+
+  /* ════════════════════════════
+     画面切替
+  ════════════════════════════ */
+  function showScreen(id) {
+    document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+    document.getElementById(id).classList.add("active");
+    window.scrollTo(0, 0);
+    // トップ以外でホームボタンを表示
+    document.getElementById("home-btn").classList.toggle("visible", id !== "screen-top");
+  }
+
+  /* ════════════════════════════
+     カテゴリーボタン生成
+  ════════════════════════════ */
+  function buildCategoryButtons() {
+    const grid = document.getElementById("cat-grid");
+    Object.keys(words).forEach(cat => {
+      const btn = document.createElement("button");
+      btn.className = "cat-btn";
+      btn.textContent = cat;
+      btn.onclick = () => showCategory(cat);
+      grid.appendChild(btn);
+    });
+  }
+
+  /* ════════════════════════════
+     1枚表示（カテゴリー・ランダム共通）
+     mode = カテゴリー名 or null（全ランダム）
+  ════════════════════════════ */
+  let singleMode         = null; // null=全ランダム / "カテゴリー名"=カテゴリー固定
+  let currentSingleQuote = "";
+  let currentSingleCat   = "";   // 表示中の言葉の実カテゴリー
+
+  function showSingle(mode) {
+    singleMode = mode;
+
+    // 抽選プール作成
+    const pool = mode
+      ? words[mode].map(q => ({ quote: q, cat: mode }))
+      : Object.entries(words).flatMap(([cat, qs]) => qs.map(q => ({ quote: q, cat })));
+
+    const pick = pool[Math.floor(Math.random() * pool.length)];
+    currentSingleQuote = pick.quote;
+    currentSingleCat   = pick.cat;
+
+    // コーギー・カテゴリーバッジ
+    document.getElementById("single-corgi").innerHTML = FACES[CATEGORY_FACE[pick.cat] || "gentle"];
+    document.getElementById("single-cat-badge").textContent = pick.cat;
+
+    // テキスト（フェードイン）
+    const quoteEl = document.getElementById("single-quote");
+    quoteEl.style.opacity = "0";
+    setTimeout(() => { quoteEl.textContent = pick.quote; quoteEl.style.opacity = "1"; }, 120);
+
+    refreshSingleHeart();
+    showScreen("screen-single");
+  }
+
+  // トップの「ランダムでぽん」
+  function showRandom() { showSingle(null); }
+
+  // トップのカテゴリーボタン
+  function showCategory(cat) { showSingle(cat); }
+
+  // 1枚表示の「もう1つ」
+  function nextSingle() { showSingle(singleMode); }
+
+  /* ── ハート（1枚表示） ── */
+  function refreshSingleHeart() {
+    const count = getHearts()[currentSingleQuote] || 0;
+    document.getElementById("single-heart-icon").textContent = count > 0 ? "♥" : "♡";
+  }
+
+  function tapSingleHeart() {
+    const hearts = getHearts();
+    hearts[currentSingleQuote] = (hearts[currentSingleQuote] || 0) + 1;
+    saveHearts(hearts);
+
+    const icon = document.getElementById("single-heart-icon");
+    icon.textContent = "♥";
+    icon.classList.remove("pop");
+    void icon.offsetWidth;
+    icon.classList.add("pop");
+
+    fadeQuote(currentSingleQuote);
+  }
+
+  /* ════════════════════════════
+     一覧（ハートつき）
+  ════════════════════════════ */
+  function showList(cat) {
+    document.getElementById("list-cat-badge").textContent = cat;
+
+    const hearts = getHearts();
+    const list   = document.getElementById("word-list");
+    list.innerHTML = "";
+
+    words[cat].forEach(quote => {
+      const count = hearts[quote] || 0;
+
+      const item = document.createElement("div");
+      item.className = "word-item";
+
+      const textEl = document.createElement("div");
+      textEl.className = "word-text";
+      textEl.textContent = quote;
+
+      const heartBtn = document.createElement("button");
+      heartBtn.className = "heart-btn";
+      heartBtn.setAttribute("aria-label", "ハートを押す");
+      heartBtn.innerHTML = `<span class="heart-icon">${count > 0 ? "♥" : "♡"}</span>`;
+      heartBtn.onclick = () => tapListHeart(heartBtn, quote);
+
+      item.appendChild(textEl);
+      item.appendChild(heartBtn);
+      list.appendChild(item);
+    });
+
+    showScreen("screen-list");
+  }
+
+  /* ── 一覧のハートタップ ── */
+  function tapListHeart(btn, quote) {
+    const hearts = getHearts();
+    hearts[quote] = (hearts[quote] || 0) + 1;
+    saveHearts(hearts);
+
+    const icon = btn.querySelector(".heart-icon");
+    icon.textContent = "♥";
+    icon.classList.remove("pop");
+    void icon.offsetWidth;
+    icon.classList.add("pop");
+
+    fadeQuote(quote);
+  }
+
+  /* ── ふわっと演出（5か所・画面コーナーのみ） ── */
+  // カード・コーギー・ホームボタンと絶対に被らない5つの固定エリア
+  const FADE_POSITIONS = [
+    { top: "2%",    left: "2%",   maxW: "43vw", align: "left"   }, // 左上
+    { top: "2%",    right: "2%",  maxW: "43vw", align: "right"  }, // 右上（ホームより上）
+    { bottom: "3%", left: "2%",   maxW: "43vw", align: "left"   }, // 左下
+    { bottom: "3%", right: "2%",  maxW: "43vw", align: "right"  }, // 右下
+    { bottom: "11%",left: "50%",  maxW: "76vw", align: "center",
+      transform: "translateX(-50%)" },                              // 下中央
+  ];
+  const FADE_DURATION = 3800; // ms（CSSと合わせる）
+  const FADE_INTERVAL = 3800; // ms（1本消えたら次が出る）
+
+  // シャボン玉（wrapperの左上基点で配置）
+  const BUBBLES = [
+    { w: 16, h: 16, top: -14, left:  4,  bg: "rgba(214,63,106,0.22)", dur: 2.2, delay: 0   },
+    { w: 10, h: 10, top:  -8, left:  28, bg: "rgba(255,255,255,0.55)", dur: 1.7, delay: 0.5 },
+    { w: 18, h: 18, top:  22, left:  -2, bg: "rgba(232,154,164,0.28)", dur: 2.8, delay: 0.2 },
+    { w:  9, h:  9, top:  -5, left:  60, bg: "rgba(255,200,215,0.55)", dur: 1.5, delay: 0.8 },
+    { w: 14, h: 14, top:  20, left:  44, bg: "rgba(214,63,106,0.18)",  dur: 2.0, delay: 0.4 },
+    { w:  7, h:  7, top: -12, left:  88, bg: "rgba(255,255,255,0.45)", dur: 1.9, delay: 0.6 },
+  ];
+
+  function fadeQuote(text) {
+    FADE_POSITIONS.forEach((pos, i) => {
+      setTimeout(() => {
+        const wrapper = document.createElement("div");
+        wrapper.className   = "fade-wrapper";
+        wrapper.style.maxWidth  = pos.maxW;
+        wrapper.style.textAlign = pos.align;
+        if (pos.top)       wrapper.style.top       = pos.top;
+        if (pos.bottom)    wrapper.style.bottom     = pos.bottom;
+        if (pos.left)      wrapper.style.left       = pos.left;
+        if (pos.right)     wrapper.style.right      = pos.right;
+        if (pos.transform) wrapper.style.transform  = pos.transform;
+
+        const textEl = document.createElement("span");
+        textEl.className   = "fade-text";
+        textEl.textContent = text;
+        wrapper.appendChild(textEl);
+
+        BUBBLES.forEach(b => {
+          const bEl = document.createElement("div");
+          bEl.className        = "fade-bubble";
+          bEl.style.width      = b.w + "px";
+          bEl.style.height     = b.h + "px";
+          bEl.style.top        = b.top + "px";
+          bEl.style.left       = b.left + "px";
+          bEl.style.background = b.bg;
+          bEl.style.setProperty("--bur",    b.dur   + "s");
+          bEl.style.setProperty("--bdelay", b.delay + "s");
+          wrapper.appendChild(bEl);
+        });
+
+        document.body.appendChild(wrapper);
+        setTimeout(() => wrapper.remove(), FADE_DURATION + 300);
+      }, i * FADE_INTERVAL);
+    });
+  }
+
+  /* ════════════════════════════
+     ランキング表示
+  ════════════════════════════ */
+  function showRanking() {
+    const hearts = getHearts();
+    const list = document.getElementById("ranking-list");
+    list.innerHTML = "";
+
+    const all = [];
+    Object.entries(words).forEach(([cat, quotes]) => {
+      quotes.forEach(q => {
+        const c = hearts[q] || 0;
+        if (c > 0) all.push({ quote: q, cat, count: c });
+      });
+    });
+
+    if (all.length === 0) {
+      list.innerHTML = `<div class="empty-state">まだハートがありません 🤍<br>気に入った言葉にハートを押してみてね</div>`;
+    } else {
+      all.sort((a, b) => b.count - a.count);
+      all.forEach(({ quote, cat, count }, i) => {
+        const medal = ["🥇","🥈","🥉"][i];
+        const numEl = medal
+          ? `<div class="rank-num">${medal}</div>`
+          : `<div class="rank-num normal">${i + 1}位</div>`;
+
+        const item = document.createElement("div");
+        item.className = "rank-item";
+        item.innerHTML = `
+          ${numEl}
+          <div class="rank-body">
+            <div class="rank-text">${quote}</div>
+            <div class="rank-cat">${cat}</div>
+          </div>
+          <div class="rank-heart">♥ ${count}</div>
+        `;
+        list.appendChild(item);
+      });
+    }
+
+    showScreen("screen-ranking");
+  }
+
+  /* ════════════════════════════
+     初期化
+  ════════════════════════════ */
+  document.addEventListener("DOMContentLoaded", () => {
+    newSpell();
+    buildCategoryButtons();
+  });
+</script>
+</body>
+</html>

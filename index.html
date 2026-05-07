@@ -541,6 +541,33 @@
       margin-top: 20px;
       padding-top: 12px;
     }
+
+    /* ── 音声ON/OFFボタン（固定） ── */
+    .voice-toggle-btn {
+      position: fixed;
+      bottom: 22px;
+      right: 16px;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: 2px solid #f0c4cb;
+      background: #fff;
+      font-size: 1.4rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 3px 12px rgba(201,123,132,0.18);
+      z-index: 200;
+      transition: background 0.15s, transform 0.1s;
+      line-height: 1;
+    }
+    .voice-toggle-btn:hover  { background: #fde8eb; transform: scale(1.08); }
+    .voice-toggle-btn:active { transform: scale(0.95); }
+    .voice-toggle-btn.on {
+      background: linear-gradient(135deg, #fde8eb, #fbd0d8);
+      border-color: #e08090;
+    }
   </style>
 </head>
 <body>
@@ -625,6 +652,9 @@
 </div>
 
 
+<!-- 音声ON/OFFボタン（全画面共通・固定） -->
+<button id="voice-toggle-btn" class="voice-toggle-btn" onclick="toggleVoice()" title="音声読み上げ ON/OFF">🔇</button>
+
 <!-- トップ画面：呪文カード周りのふわっとハート -->
 <span id="tfh1" class="top-float-heart" style="font-size:13px;color:#f4a0b0;--dx:-3px;animation-duration:3.8s;animation-delay:0s;">♥</span>
 <span id="tfh2" class="top-float-heart" style="font-size:11px;color:#e89aa4;--dx:5px;animation-duration:4.5s;animation-delay:1.2s;">♥</span>
@@ -633,6 +663,64 @@
 <span id="tfh5" class="top-float-heart" style="font-size:12px;color:#f4a0b0;--dx:3px;animation-duration:4.1s;animation-delay:1.8s;">♥</span>
 
 <script>
+  /* ════════════════════════════
+     音声合成（SpeechSynthesis API）
+  ════════════════════════════ */
+  let voiceEnabled = false; // デフォルトOFF
+
+  function toggleVoice() {
+    voiceEnabled = !voiceEnabled;
+    const btn = document.getElementById("voice-toggle-btn");
+    if (voiceEnabled) {
+      btn.textContent = "🔊";
+      btn.classList.add("on");
+      btn.title = "音声読み上げ ON（タップでOFF）";
+    } else {
+      btn.textContent = "🔇";
+      btn.classList.remove("on");
+      btn.title = "音声読み上げ OFF（タップでON）";
+      // 再生中なら止める
+      window.speechSynthesis.cancel();
+    }
+  }
+
+  function speak(text) {
+    if (!voiceEnabled) return;
+    if (!window.speechSynthesis) return;
+
+    // 読み上げ前に前の音声を止める
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang  = "ja-JP";
+    utterance.rate  = 0.8;   // ゆっくりめ
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+
+    // 日本語音声を優先して選択
+    const setVoice = () => {
+      const voices = window.speechSynthesis.getVoices();
+      const jaVoice = voices.find(v => v.lang === "ja-JP") ||
+                      voices.find(v => v.lang.startsWith("ja"));
+      if (jaVoice) utterance.voice = jaVoice;
+      window.speechSynthesis.speak(utterance);
+    };
+
+    // 音声リストが未ロードの場合は onvoiceschanged を待つ
+    if (window.speechSynthesis.getVoices().length > 0) {
+      setVoice();
+    } else {
+      window.speechSynthesis.onvoiceschanged = () => {
+        window.speechSynthesis.onvoiceschanged = null;
+        setVoice();
+      };
+      // フォールバック：音声リストなしでもとりあえず話す
+      setTimeout(() => {
+        if (!utterance.voice) window.speechSynthesis.speak(utterance);
+      }, 300);
+    }
+  }
+
   /* ════════════════════════════
      呪文フレーズ
   ════════════════════════════ */
@@ -876,7 +964,7 @@
     lastSpellIdx = idx;
     const el = document.getElementById("spell-text");
     el.style.opacity = "0";
-    setTimeout(() => { el.textContent = SPELLS[idx]; el.style.opacity = "1"; }, 140);
+    setTimeout(() => { el.textContent = SPELLS[idx]; el.style.opacity = "1"; speak(SPELLS[idx]); }, 140);
   }
 
   /* ════════════════════════════
@@ -939,7 +1027,7 @@
     // テキスト（フェードイン）
     const quoteEl = document.getElementById("single-quote");
     quoteEl.style.opacity = "0";
-    setTimeout(() => { quoteEl.textContent = formatQuote(pick.quote); quoteEl.style.opacity = "1"; }, 120);
+    setTimeout(() => { quoteEl.textContent = formatQuote(pick.quote); quoteEl.style.opacity = "1"; speak(pick.quote); }, 120);
 
     refreshSingleHeart();
     showScreen("screen-single");
@@ -1212,6 +1300,7 @@
       setTimeout(() => {
         quoteEl.textContent = formatQuote(matched.quote);
         quoteEl.style.opacity = "1";
+        speak(matched.quote);
       }, 120);
 
       refreshSingleHeart();
